@@ -7,6 +7,9 @@ return {
         vtsls = false,
         tsserver = false,
       },
+      inlay_hints = {
+        enabled = false,
+      },
     },
   },
 

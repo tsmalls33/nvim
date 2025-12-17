@@ -17,3 +17,6 @@ vim.api.nvim_create_autocmd("ExitPre", {
     vim.fn.system("pkill -f 'tsserver.js'")
   end,
 })
+
+-- Leave ai completion to copilot
+vim.g.ai_cmp = false
