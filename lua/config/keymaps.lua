@@ -14,3 +14,8 @@ vim.keymap.set("n", "N", "Nzzzv")
 
 -- Precognition
 vim.keymap.set("n", "<leader>tp", require("precognition").toggle)
+
+-- set the file picker to always open the cwd instead of root
+vim.keymap.set("n", "<leader><leader>", function()
+  require("lazyvim.util").pick("files", { root = false })()
+end, { desc = "Find Files (cwd)" })
