@@ -5,16 +5,16 @@ return {
   -- Configure snacks.nvim
   {
     "folke/snacks.nvim",
-    keys = {
-      {
-        "\\",
-        function()
-          Snacks.explorer()
-        end,
-        desc = "Toggle Snacks Explorer (Picker)",
-      },
-      { "<leader>e", false },
-    },
+    -- keys = {
+    --   {
+    --     "\\",
+    --     function()
+    --       Snacks.explorer()
+    --     end,
+    --     desc = "Toggle Snacks Explorer (Picker)",
+    --   },
+    --   { "<leader>e", false },
+    -- },
     opts = {
       scroll = {
         enabled = false, -- Disable scrolling animations
