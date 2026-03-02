@@ -30,7 +30,7 @@ return {
     -- { "<C-/>", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" }, -- not working
     { "<leader>jj", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
     { "<leader>jb", "<cmd>ClaudeCodeAdd %<cr>", desc = "Add current buffer" },
-    { "<leader>js", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = "Send selection" },
+    { "<leader>js", "<cmd>ClaudeCodeSend<cr>", mode = { "n", "v" }, desc = "Send selection / file" },
 
     -- I use snacks_picker_list, not supported yet. Claude Code currently only supports these 5.
     -- {
