@@ -16,18 +16,35 @@ return {
     --   { "<leader>e", false },
     -- },
     opts = {
+      dashboard = {
+        preset = {
+          header = [[
+
+
+ ███████████ █████████  ██████   ██████  █████████  █████      █████        █████████
+░█░░░███░░░████░░░░░███░░██████ ██████  ███░░░░░███░░███      ░░███        ███░░░░░███
+░   ░███  ░░███    ░░░  ░███░█████░███ ░███    ░███ ░███       ░███       ░███    ░░░
+    ░███   ░░█████████  ░███░░███ ░███ ░███████████ ░███       ░███       ░░█████████
+    ░███    ░░░░░░░░███ ░███ ░░░  ░███ ░███░░░░░███ ░███       ░███        ░░░░░░░░███
+    ░███    ███    ░███ ░███      ░███ ░███    ░███ ░███      █░███      █ ███    ░███
+    █████  ░░█████████  █████     ██████████   ███████████████████████████░░█████████
+   ░░░░░    ░░░░░░░░░  ░░░░░     ░░░░░░░░░░   ░░░░░░░░░░░░░░░░░░░░░░░░░░░  ░░░░░░░░░
+
+          ]]
+        }
+      },
       scroll = {
         enabled = false, -- Disable scrolling animations
       },
       picker = {
         sources = {
           explorer = {
-            hidden = false, -- Show hidden files by default
+            hidden = false,                -- Show hidden files by default
             layout = { preset = "right" }, -- Position on the right
             ignored = false,
-            git_status = true, -- Show git status
-            diagnostics = true, -- Show diagnostics
-            follow_file = true, -- Follow current file
+            git_status = true,             -- Show git status
+            diagnostics = true,            -- Show diagnostics
+            follow_file = true,            -- Follow current file
             win = {
               list = {
                 keys = {
