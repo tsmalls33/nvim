@@ -19,3 +19,6 @@ vim.keymap.set("n", "<leader>tp", require("precognition").toggle)
 vim.keymap.set("n", "<leader><leader>", function()
   require("lazyvim.util").pick("files", { root = false })()
 end, { desc = "Find Files (cwd)" })
+
+-- Markdown task management
+require("config.markdown-tasks").setup()
