@@ -7,7 +7,12 @@ return {
     focus_after_send = true,
     terminal = {
       git_repo_cwd = true,
+      -- split_side = "left",
+      -- split_width_percentage = 0.25,
+      -- provider = "toggleterm", -- "snacks" or "toggleterm"...
+      -- auto_close = true,
       snacks_win_opts = {
+        -- Floating window options
         position = "float",
         width = 0.85,
         height = 0.85,
