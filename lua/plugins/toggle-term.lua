@@ -10,7 +10,7 @@ return {
     open_mapping = [[<leader>tt]],
     direction = "float",
     float_opts = { border = "rounded" },
-    shell = vim.fn.exepath("zsh") .. " -l -i",
+    shell = vim.o.shell .. " -l -i",
   },
 
   config = function(_, opts)

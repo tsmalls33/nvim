@@ -64,7 +64,7 @@ end
 
 -- Strips the stats suffix from a heading line, returning the bare heading.
 local function strip_stats(line)
-  return (line:gsub("%s+✅%d+ ❌%d+%s*$", ""))
+  return (line:gsub("%s+✅%d+/%d+%s*$", ""))
 end
 
 -- Counts [x] and [ ] tasks in a section starting at header_line (1-indexed).
@@ -89,7 +89,7 @@ local function update_section_stats()
     if line:match("^## ") then
       local base = strip_stats(line)
       local done, todo = count_section_tasks(lines, i)
-      local new_line = base .. "  ✅" .. done .. " ❌" .. todo
+      local new_line = base .. "  ✅" .. done .. "/" .. todo
       if new_line ~= line then
         lines[i] = new_line
         changed = true
@@ -355,35 +355,43 @@ end
 
 function M.setup()
   local group = vim.api.nvim_create_augroup("MarkdownTasks", { clear = true })
+
+  local function setup_buf(buf)
+    local o = function(desc) return { buffer = buf, desc = desc } end
+    vim.keymap.set("n", "<leader>mn", new_task, o("New task"))
+    vim.keymap.set("n", "<leader>mx", toggle_task, o("Toggle done"))
+    vim.keymap.set("n", "<leader>mf", toggle_task_format, o("Toggle task format"))
+    vim.keymap.set("n", "<leader>mj", jump_next_task, o("Next task"))
+    vim.keymap.set("n", "<leader>mk", jump_prev_task, o("Prev task"))
+    vim.keymap.set("n", "<leader>ml", list_tasks_in_file, o("List tasks (file)"))
+    vim.keymap.set("n", "<leader>ms", search_all_tasks, o("Search all tasks"))
+    vim.keymap.set("n", "<leader>mt", insert_date, o("Insert date header"))
+    vim.keymap.set("n", "<leader>mmg", move_to_general, o("Move → general"))
+    vim.keymap.set("n", "<leader>mmt", move_to_today, o("Move → today"))
+    vim.keymap.set("n", "<leader>mmT", move_to_tomorrow, o("Move → tomorrow"))
+    vim.keymap.set("n", "<leader>mmy", move_to_yesterday, o("Move → yesterday"))
+    vim.keymap.set("n", "<leader>mmd", move_to_date, o("Move → date…"))
+    -- Update stats after leaving insert mode (covers new_task completions).
+    vim.api.nvim_create_autocmd("InsertLeave", {
+      buffer = buf,
+      group = group,
+      callback = update_section_stats,
+    })
+  end
+
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "markdown",
     group = group,
-    callback = function(ev)
-      local buf = ev.buf
-      local o = function(desc) return { buffer = buf, desc = desc } end
-
-      vim.keymap.set("n", "<leader>mn", new_task, o("New task"))
-      vim.keymap.set("n", "<leader>mx", toggle_task, o("Toggle done"))
-      vim.keymap.set("n", "<leader>mf", toggle_task_format, o("Toggle task format"))
-      vim.keymap.set("n", "<leader>mj", jump_next_task, o("Next task"))
-      vim.keymap.set("n", "<leader>mk", jump_prev_task, o("Prev task"))
-      vim.keymap.set("n", "<leader>ml", list_tasks_in_file, o("List tasks (file)"))
-      vim.keymap.set("n", "<leader>ms", search_all_tasks, o("Search all tasks"))
-      vim.keymap.set("n", "<leader>mt", insert_date, o("Insert date header"))
-      vim.keymap.set("n", "<leader>mmg", move_to_general, o("Move → general"))
-      vim.keymap.set("n", "<leader>mmt", move_to_today, o("Move → today"))
-      vim.keymap.set("n", "<leader>mmT", move_to_tomorrow, o("Move → tomorrow"))
-      vim.keymap.set("n", "<leader>mmy", move_to_yesterday, o("Move → yesterday"))
-      vim.keymap.set("n", "<leader>mmd", move_to_date, o("Move → date…"))
-
-      -- Update stats after leaving insert mode (covers new_task completions).
-      vim.api.nvim_create_autocmd("InsertLeave", {
-        buffer = buf,
-        group = group,
-        callback = update_section_stats,
-      })
-    end,
+    callback = function(ev) setup_buf(ev.buf) end,
   })
+
+  -- VeryLazy fires after the initial buffer's FileType event, so apply
+  -- keymaps to any markdown buffers that are already open.
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+      setup_buf(buf)
+    end
+  end
 end
 
 return M
