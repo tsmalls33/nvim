@@ -25,15 +25,74 @@ local function new_task()
 end
 
 local function toggle_task()
-  local line = vim.api.nvim_get_current_line()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local row = vim.api.nvim_win_get_cursor(0)[1]
+  local line = lines[row]
+  if not line:find("%[[ x]%]") then return end
+
+  -- Toggle current line
+  local new_state
   if line:find("%[ %]") then
-    vim.api.nvim_set_current_line((line:gsub("%[ %]", "[x]", 1)))
-  elseif line:find("%[x%]") then
-    vim.api.nvim_set_current_line((line:gsub("%[x%]", "[ ]", 1)))
+    lines[row] = line:gsub("%[ %]", "[x]", 1)
+    new_state = "[x]"
   else
-    return
+    lines[row] = line:gsub("%[x%]", "[ ]", 1)
+    new_state = "[ ]"
   end
-  -- stats updated below after toggle
+
+  local cur_indent = #(line:match("^(%s*)") or "")
+
+  -- Cascade down: set all deeper-indented children to same state
+  for i = row + 1, #lines do
+    local l = lines[i]
+    if not l:match("^%s*%-") then break end
+    local indent = #(l:match("^(%s*)") or "")
+    if indent <= cur_indent then break end
+    if new_state == "[x]" then
+      lines[i] = l:gsub("%[ %]", "[x]", 1)
+    else
+      lines[i] = l:gsub("%[x%]", "[ ]", 1)
+    end
+  end
+
+  -- Cascade up: find parent (less indent, is a task)
+  local parent_row
+  for i = row - 1, 1, -1 do
+    local l = lines[i]
+    if not l:match("^%s*%-") then break end
+    local indent = #(l:match("^(%s*)") or "")
+    if indent < cur_indent and l:find("%[[ x]%]") then
+      parent_row = i
+      break
+    end
+  end
+
+  if parent_row then
+    if new_state == "[ ]" and lines[parent_row]:find("%[x%]") then
+      -- Unchecking child: uncheck parent
+      lines[parent_row] = lines[parent_row]:gsub("%[x%]", "[ ]", 1)
+    elseif new_state == "[x]" then
+      -- Checking child: check parent if all siblings are now done
+      local parent_indent = #(lines[parent_row]:match("^(%s*)") or "")
+      local all_done = true
+      for i = parent_row + 1, #lines do
+        local l = lines[i]
+        if not l:match("^%s*%-") then break end
+        local indent = #(l:match("^(%s*)") or "")
+        if indent <= parent_indent then break end
+        if indent == cur_indent and l:find("%[ %]") then
+          all_done = false
+          break
+        end
+      end
+      if all_done then
+        lines[parent_row] = lines[parent_row]:gsub("%[ %]", "[x]", 1)
+      end
+    end
+  end
+
+  vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+  vim.api.nvim_win_set_cursor(0, { row, vim.api.nvim_win_get_cursor(0)[2] })
   local update = require("config.markdown-tasks")._update_stats
   if update then update() end
 end
@@ -62,9 +121,22 @@ end
 
 -- ── Section task stats ────────────────────────────────────────────────────────
 
+-- Parses a "DD-MM-YYYY" string into a Unix timestamp for comparison.
+local function date_to_time(s)
+  local d, m, y = s:match("(%d+)-(%d+)-(%d+)")
+  if not d then return 0 end
+  return os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d) })
+end
+
 -- Strips the stats suffix from a heading line, returning the bare heading.
 local function strip_stats(line)
-  return (line:gsub("%s+✅%d+/%d+%s*$", ""))
+  return (line
+    :gsub("%s+✅ ?%d+/%d+ ?✅%s*$", "")
+    :gsub("%s+❌ ?%d+/%d+ ?❌%s*$", "")
+    :gsub("%s+📜 ?%d+/%d+ ?📜%s*$", "")
+    :gsub("%s+⏳ ?%d+/%d+ ?⏳%s*$", "")
+    :gsub("%s+📅 ?%d+/%d+ ?📅%s*$", "")
+    :gsub("%s+🚨 ?%d+/%d+ ?🚨%s*$", ""))
 end
 
 -- Counts [x] and [ ] tasks in a section starting at header_line (1-indexed).
@@ -81,6 +153,19 @@ local function count_section_tasks(lines, header_line)
   return done, todo
 end
 
+local function classify_section(base)
+  local date_str = base:match("^## (%d%d%-%d%d%-%d%d%d%d)$")
+  if not date_str then return "general" end
+  local section_time = date_to_time(date_str)
+  local today_start = date_to_time(os.date("%d-%m-%Y"))
+  if section_time == today_start then return "today" end
+  return section_time > today_start and "future" or "past"
+end
+
+local section_icons = {
+  general = "📜", today = "⏳", future = "📅", past = "❌",
+}
+
 -- Updates every ## heading with a live task count suffix.
 local function update_section_stats()
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
@@ -89,7 +174,17 @@ local function update_section_stats()
     if line:match("^## ") then
       local base = strip_stats(line)
       local done, todo = count_section_tasks(lines, i)
-      local new_line = base .. "  ✅" .. done .. "/" .. todo
+      local total = done + todo
+      local kind = classify_section(base)
+      local icon
+      if total > 0 and done == total then
+        icon = "✅"
+      elseif kind == "today" and done == 0 and total >= 2 then
+        icon = "🚨"
+      else
+        icon = section_icons[kind]
+      end
+      local new_line = base .. "  " .. icon .. " " .. done .. "/" .. total .. " " .. icon
       if new_line ~= line then
         lines[i] = new_line
         changed = true
@@ -164,13 +259,6 @@ local function section_end(header_line)
     if not lines[i]:match("^%s*$") then last = i end
   end
   return last
-end
-
--- Parses a "DD-MM-YYYY" string into a Unix timestamp for comparison.
-local function date_to_time(s)
-  local d, m, y = s:match("(%d+)-(%d+)-(%d+)")
-  if not d then return 0 end
-  return os.time({ year = tonumber(y), month = tonumber(m), day = tonumber(d) })
 end
 
 -- Inserts a new "## date_str" line in descending date order (newest first).
