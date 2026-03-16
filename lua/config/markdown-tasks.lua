@@ -3,11 +3,26 @@
 --
 -- File structure expected:
 --   # TODO Lists
---   ## General Section  ✅2 ❌1
+--   ## General Section  📜 1/2 📜
 --   - [ ] undated task
---   ## DD-MM-YYYY  ✅0 ❌3   (newest date first)
---   - [ ] task
 --   - [x] done task
+--   ## DD-MM-YYYY  ⏳ 0/2 ⏳      (date sections sorted newest first)
+--   - [ ] task
+--   - [ ] another task
+--
+-- Section stat icons (auto-updated on toggle and InsertLeave):
+--   ✅  all tasks done (any section)
+--   🚨  today, 0 done, ≥2 total
+--   ⏳  today (default)
+--   📅  future date
+--   ❌  past date
+--   📜  general (non-date heading)
+--
+-- Features:
+--   Toggle cascades to children; unchecking a child unchecks parent,
+--   checking last sibling checks parent. Spacing is auto-normalized
+--   (blank lines around headings, none between sibling tasks).
+--   Tasks can be moved between date sections and a general section.
 
 local M = {}
 
