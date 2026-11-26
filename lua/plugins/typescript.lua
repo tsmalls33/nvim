@@ -22,6 +22,11 @@ return {
       "javascript",
       "javascriptreact",
     },
+    keys = {
+      { "<leader>ci", "<cmd>TSToolsAddMissingImports<cr>", desc = "Add all missing imports" },
+      { "<leader>cI", "<cmd>TSToolsOrganizeImports<cr>",  desc = "Organize imports" },
+      { "<leader>cF", "<cmd>TSToolsFixAll<cr>",           desc = "Fix all" },
+    },
     opts = {
       settings = {
         tsserver_file_preferences = {

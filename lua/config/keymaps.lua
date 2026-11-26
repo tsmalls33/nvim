@@ -15,6 +15,19 @@ vim.keymap.set("n", "N", "Nzzzv")
 -- Precognition
 vim.keymap.set("n", "<leader>tp", require("precognition").toggle)
 
+-- Copilot
+vim.keymap.set("n", "<leader>ta", function()
+  local s = require("copilot.suggestion")
+  if s.is_visible() or vim.b.copilot_suggestion_auto_trigger then
+    s.dismiss()
+    vim.b.copilot_suggestion_auto_trigger = false
+    vim.notify("Copilot off", vim.log.levels.INFO)
+  else
+    vim.b.copilot_suggestion_auto_trigger = true
+    vim.notify("Copilot on", vim.log.levels.INFO)
+  end
+end, { desc = "Toggle AI suggestions" })
+
 -- set the file picker to always open the cwd instead of root
 vim.keymap.set("n", "<leader><leader>", function()
   require("lazyvim.util").pick("files", { root = false })()

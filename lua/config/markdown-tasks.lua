@@ -459,6 +459,14 @@ end
 function M.setup()
   local group = vim.api.nvim_create_augroup("MarkdownTasks", { clear = true })
 
+  -- Only manage markdown files whose filename includes "todo" (case-insensitive),
+  -- e.g. TODO.md, todo.md, work-todo.md. Keeps task stats out of ordinary markdown.
+  local function is_todo_file(buf)
+    local name = vim.api.nvim_buf_get_name(buf)
+    local tail = name:match("[^/]*$") or name
+    return tail:lower():find("todo") ~= nil
+  end
+
   local function setup_buf(buf)
     local o = function(desc) return { buffer = buf, desc = desc } end
     vim.keymap.set("n", "<leader>mn", new_task, o("New task"))
@@ -485,13 +493,15 @@ function M.setup()
   vim.api.nvim_create_autocmd("FileType", {
     pattern = "markdown",
     group = group,
-    callback = function(ev) setup_buf(ev.buf) end,
+    callback = function(ev)
+      if is_todo_file(ev.buf) then setup_buf(ev.buf) end
+    end,
   })
 
   -- VeryLazy fires after the initial buffer's FileType event, so apply
   -- keymaps to any markdown buffers that are already open.
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" then
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == "markdown" and is_todo_file(buf) then
       setup_buf(buf)
     end
   end
